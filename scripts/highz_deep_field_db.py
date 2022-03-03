@@ -85,4 +85,7 @@ class HighzDeepFieldDB(object):
             self.deepfields[key]['shape'] = this_shape
     
     def get_field_by_ra_dec(self, ra, dec):
-        
+        raise NotImplementedError()
+
+
+

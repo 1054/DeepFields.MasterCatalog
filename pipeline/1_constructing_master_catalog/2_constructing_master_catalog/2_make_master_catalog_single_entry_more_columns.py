@@ -1,4 +1,4 @@
-#!/usr/bin/env python -u
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # This code will output "master_catalog_multi_entries.txt".
 # Reference: D. Liu et al. 2019a, ApJS, 244, 40
@@ -8,7 +8,7 @@ sys.path.insert(1, os.path.dirname(os.path.abspath(__file__)))
 #from fits_catalog_io import FITSCatalogIO
 sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))+os.sep+'scripts')
 from highz_galaxy_catalog_io import HighzGalaxyCatalogIO as CatalogIO
-from highz_deep_field_db import HighzDeepFieldDB as DeepFieldDB
+#from highz_deep_field_db import HighzDeepFieldDB as DeepFieldDB
 from collections import OrderedDict
 from distutils.version import LooseVersion
 from astropy.table import Table
@@ -31,6 +31,12 @@ if len(sys.argv) > 1:
 
 
 # 
+# set verbose
+verbose = False
+#verbose = True # for debugging
+
+
+# 
 # get repo_dir
 repo_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 print('repo_dir: %r'%(repo_dir))
@@ -48,7 +54,7 @@ if os.path.isdir('/data/catalogs'):
     catalog_cache_pool = '/data/catalogs'
 else:
     catalog_cache_pool = None
-print('catalog_cache_root: %r'%(catalog_cache_pool))
+print('catalog_cache_pool: %r'%(catalog_cache_pool))
 
 
 # 
@@ -113,7 +119,7 @@ for x in range(Cat_N):
     print('*-*-'*40)
     print('catalog_meta_info: %s'%(catalog_meta_info))
     
-    Cat = CatalogIO(catalog_meta_info, catalog_cache_pool=catalog_cache_pool, verbose=False)
+    Cat = CatalogIO(catalog_meta_info, catalog_cache_pool=catalog_cache_pool, verbose=verbose)
     
     if Cat.ID is None or Cat.RA is None or Cat.DEC is None:
         print('Error! Could not read ID RA Dec from table %s'%(catalog_meta_info))
@@ -170,7 +176,7 @@ for x in range(Cat_N):
     else:
         if re.match(r'^.*_FIELD_(.*)_meta_info.ini$', os.path.basename(catalog_meta_info)):
             MasterCat_Field[:] = re.sub(r'^.*_FIELD_(.*)_meta_info.ini$', r'\1', os.path.basename(catalog_meta_info))
-        elif re.match(r'^.*_COSMOS2015_meta_info.ini$', os.path.basename(catalog_meta_info)):
+        elif re.match(r'^.*_COSMOS.*_meta_info.ini$', os.path.basename(catalog_meta_info)):
             MasterCat_Field[:] = 'COSMOS'
     Cat_Field_2D.append(MasterCat_Field)
     
@@ -233,7 +239,7 @@ Output_Dict['Origin_logSSFR'] = np.full(len(MasterCat), fill_value=-99, dtype=np
 Output_Dict['zprior'] = ['']*len(MasterCat)
 Output_Dict['N_zprior'] = [0]*len(MasterCat)
 Output_Dict['Ref_zprior'] = ['']*len(MasterCat)
-Output_Dict['Flag_inconsistent_zspec'] = np.full(len(tb), fill_value=False, dtype=bool)
+Output_Dict['Flag_inconsistent_zspec'] = np.full(len(MasterCat), fill_value=False, dtype=bool)
 mask_valid_z = np.logical_and(~np.isnan(Cat_z_2D), Cat_z_2D>0.0)
 mask_valid_zphot = np.logical_and(~np.isnan(Cat_zphot_2D), Cat_zphot_2D>0.0)
 mask_valid_zspec = np.logical_and(~np.isnan(Cat_zspec_2D), Cat_zspec_2D>0.0)
@@ -298,7 +304,7 @@ for i in tqdm(range(len(MasterCat))):
                 if temp_ref_zprior_list[k].find('(zspec)') >= 0:
                     temp_zspec_list.append(float(temp_zprior_list[k]))
             if len(temp_zspec_list) >= 2:
-                if not np.all(np.isclose(np.diff(temp_zspec_list), 0.0, atol=0.05*np.max(temp_zprior_list))):
+                if not np.all(np.isclose(np.diff(np.array(temp_zspec_list)), 0.0, atol=0.05*np.max(np.array(temp_zprior_list).astype(float)))):
                     #<TODO># relative difference for inconsistent zspec: 0.05
                     # note that because the compared value is 0.0, rtol takes not effect.
                     Output_Dict['Flag_inconsistent_zspec'][i] = True

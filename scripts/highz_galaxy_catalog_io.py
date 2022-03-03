@@ -8,8 +8,8 @@ import astropy.units as u
 from astropy.table import Table, Column, MaskedColumn
 from astropy.table import join as astropy_table_join
 from astropy.coordinates import SkyCoord, FK5
-import synphot
-from synphot import SourceSpectrum 
+#import synphot
+#from synphot import SourceSpectrum 
 # synphot is used to convert Vega mag to flux
 # f_Ks = synphot.units.convert_flux(2.15e-6*u.m, tb['Ks']*synphot.units.VEGAMAG, synphot.units.FNU, vegaspec=SourceSpectrum.from_vega()) # https://sites.astro.caltech.edu/palomar/observer/200inchResources/P200filters.html, WIRC
 # f_Ks = f_Ks.to(u.Jy)

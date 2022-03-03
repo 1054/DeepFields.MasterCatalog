@@ -165,13 +165,13 @@ while [[ $argId -le $# ]]; do
     #    echo "argStr = ${argStr}"
     # 
     if [[ -z "$dirCategory" ]]; then
-        listCategories=($(list_category_dirs "$Running_Pipeline_Code_Dir/Pipeline"))
-        dirCategory=($(find_category_dirs "$Running_Pipeline_Code_Dir/Pipeline" "${argStr}"))
+        listCategories=($(list_category_dirs "$Running_Pipeline_Code_Dir/pipeline"))
+        dirCategory=($(find_category_dirs "$Running_Pipeline_Code_Dir/pipeline" "${argStr}"))
         if [[ -z "$dirCategory" ]] || [[ ${#dirCategory[@]} -gt 1 ]]; then
             if [[ -z "$dirCategory" ]]; then
-                echo "Error! No pipeline category was found with the input name \"${argStr}\" under \"$Running_Pipeline_Code_Dir/Pipeline/\"!"
+                echo "Error! No pipeline category was found with the input name \"${argStr}\" under \"$Running_Pipeline_Code_Dir/pipeline/\"!"
             else
-                echo "Error! More than one pipeline categories were found with the input name \"${argStr}\" under \"$Running_Pipeline_Code_Dir/Pipeline/\"!"
+                echo "Error! More than one pipeline categories were found with the input name \"${argStr}\" under \"$Running_Pipeline_Code_Dir/pipeline/\"!"
             fi
             echo "List of pipeline categories (${#listCategories[@]}):"
             for (( k=0; k<${#listCategories[@]}; k++ )); do 
@@ -228,7 +228,7 @@ if [[ -z "$dirCategory" ]]; then
     echo "Usage:"
     echo "    $(basename ${BASH_SOURCE[0]}) \"Category\" \"Job\" \"Task\""
     
-    listCategories=($(list_category_dirs "$Running_Pipeline_Code_Dir/Pipeline"))
+    listCategories=($(list_category_dirs "$Running_Pipeline_Code_Dir/pipeline"))
     
     echo ""
     echo "Notes:"

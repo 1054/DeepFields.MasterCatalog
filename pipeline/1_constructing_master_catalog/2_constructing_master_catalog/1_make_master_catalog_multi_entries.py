@@ -1,4 +1,4 @@
-#!/usr/bin/env python -u
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # This code will output "master_catalog_multi_entries.txt"
 # Reference: D. Liu et al. 2019a, ApJS, 244, 40
@@ -23,8 +23,8 @@ class CaseConfigParser(configparser.ConfigParser):
 # 
 # set const
 separation_limit = 1.0
-verbose = False
-#verbose = True # for debugging
+#verbose = False
+verbose = True # for debugging
 
 
 # 
