@@ -1,0 +1,10 @@
+.DS_Store
+*/.DS_Store
+*.pyc
+*.tmp
+*.cache
+*_cache
+*_cache_dir
+__cache__
+__pycache__
+

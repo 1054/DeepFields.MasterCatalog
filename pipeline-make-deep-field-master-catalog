@@ -1,0 +1,311 @@
+#!/bin/bash
+#
+# Aim:
+#    This code will find and run scripts under the pipeline directory and subdirectories. 
+# 
+# Usage:
+#    ./this_code some_category some_step
+# 
+# Notes:
+#    Our pipelines are hierachically classified into:
+#      Categories (Data, Photometry)
+#        Jobs ()
+#          Tasks ()
+# 
+
+
+set -e
+
+# 
+# check global var
+Running_Pipeline_Script_Path=$(perl -MCwd -e 'print Cwd::abs_path shift' "${BASH_SOURCE[0]}")
+Running_Pipeline_Code_Dir=$(dirname "${Running_Pipeline_Script_Path}")
+Running_Pipeline_Log_Dir=$(pwd -P)
+echo "Running_Pipeline_Script_Path=\"${Running_Pipeline_Script_Path}\""
+echo "Running_Pipeline_Code_Dir=\"${Running_Pipeline_Code_Dir}\""
+echo "Running_Pipeline_Log_Dir=\"${Running_Pipeline_Log_Dir}\""
+
+
+# 
+# define useful functions
+is_starting_with_number() {
+    if [[ $# -ge 1 ]]; then
+        if [[ $(echo "$1" | perl -p -e 's/^[0-9]+.*$/yes/g') == "yes" ]]; then
+            return 0
+        else
+            return -1
+        fi
+    else
+        return -2
+    fi
+}
+list_category_dirs() {
+    if [[ $# -eq 1 ]]; then
+        # -mindepth 1 -maxdepth 1 -type d \( -iname "[0-9]*" -o -iname "[0-9]*_*" \) | sort | perl -p -e 's%^.*/([0-9]+)_([0-9a-zA-Z_]+)%\1_\2%g'
+        find "$1" -mindepth 1 -maxdepth 1 -type d \
+                \( -iname "[0-9]*" -o \
+                   -iname "[0-9]*_*" \
+                \) | sort | perl -p -e 's%^.*/([0-9]+)_([0-9a-zA-Z_]+)%\1_\2%g'
+    fi
+}
+find_category_dirs() {
+    if [[ $# -ge 2 ]]; then
+        argStr="$2"
+        if is_starting_with_number "${argStr}"; then
+            find "$1" -mindepth 1 -maxdepth 1 -type d \
+                    \( -iname "${argStr}" -o \
+                       -iname "${argStr}_*" -o \
+                       -iname "0${argStr}" -o \
+                       -iname "0${argStr}_*" -o \
+                       -iname "00${argStr}" -o \
+                       -iname "00${argStr}_*" \
+                    \)
+        else
+            if [[ $(uname) == "Darwin" ]] && [[ $(find --version 2>/dev/null | grep "GNU" | wc -l) -eq 0 ]]; then
+                find -E "$1" -mindepth 1 -maxdepth 1 -type d \
+                             -iregex "$1/[0-9]+_(${argStr}|${argStr}.*|.*_${argStr}|.*_${argStr}.*)"
+            else
+                find "$1" -mindepth 1 -maxdepth 1 -type d \
+                        \( -iregex "$1/[0-9]+_${argStr}" -o \
+                           -iregex "$1/[0-9]+_${argStr}.*" -o \
+                           -iregex "$1/[0-9]+_.*_${argStr}" -o \
+                           -iregex "$1/[0-9]+_.*_${argStr}.*" \
+                        \)
+            fi
+        fi
+    fi
+}
+list_job_dirs() {
+    if [[ $# -ge 1 ]]; then
+        # -mindepth 1 -maxdepth 1 -type d \( -iname "[0-9]*" -o -iname "[0-9]*_*" \) | sort | perl -p -e 's%^.*/([0-9]+)_([0-9a-zA-Z\-_.]+)$%\1_\2%g'
+        find "$1" -mindepth 1 -maxdepth 1 -type d \
+                \( -iname "[0-9]*" -o \
+                   -iname "[0-9]*_*" \
+                \) | sort | perl -p -e 's%^.*/([0-9]+)_([0-9a-zA-Z_.-]+)%\1_\2%g' # allow . -
+    fi
+}
+find_job_dirs() {
+    if [[ $# -ge 2 ]]; then
+        argStr="$2"
+        if is_starting_with_number "${argStr}"; then
+            find "$1" -mindepth 1 -maxdepth 1 -type d \
+                    \( -iname "${argStr}" -o \
+                       -iname "${argStr}_*" -o \
+                       -iname "0${argStr}" -o \
+                       -iname "0${argStr}_*" -o \
+                       -iname "00${argStr}" -o \
+                       -iname "00${argStr}_*" \
+                    \)
+        else
+            if [[ $(uname) == "Darwin" ]] && [[ $(find --version 2>/dev/null | grep "GNU" | wc -l) -eq 0 ]]; then
+                find -E "$1" -mindepth 1 -maxdepth 1 -type d \
+                             -iregex "$1/[0-9]+_(${argStr}|${argStr}.*|.*_${argStr}|.*_${argStr}.*)"
+            else
+                find "$1" -mindepth 1 -maxdepth 1 -type d \
+                        \( -iregex "$1/[0-9]+_${argStr}" -o \
+                           -iregex "$1/[0-9]+_${argStr}.*" -o \
+                           -iregex "$1/[0-9]+_.*_${argStr}" -o \
+                           -iregex "$1/[0-9]+_.*_${argStr}.*" \
+                        \)
+            fi
+        fi
+    fi
+}
+list_task_files() {
+    if [[ $# -ge 1 ]]; then
+        find "$1" -mindepth 1 -maxdepth 1 -type f \
+                \( -iname "[0-9]*" -o \
+                   -iname "[0-9]*_*" \
+                \) | sort | perl -p -e 's%^.*/([0-9]+)_([0-9a-zA-Z_.-]+)$%\1_\2%g' # files
+    fi
+}
+find_task_files() {
+    if [[ $# -ge 2 ]]; then
+        argStr="$2"
+        if is_starting_with_number "${argStr}"; then
+            find "$1" -mindepth 1 -maxdepth 1 -type f \
+                    \( -iname "${argStr}" -o \
+                       -iname "${argStr}_*" -o \
+                       -iname "0${argStr}" -o \
+                       -iname "0${argStr}_*" -o \
+                       -iname "00${argStr}" -o \
+                       -iname "00${argStr}_*" \
+                    \)
+        else
+            if [[ $(uname) == "Darwin" ]] && [[ $(find --version 2>/dev/null | grep "GNU" | wc -l) -eq 0 ]]; then
+                find -E "$1" -mindepth 1 -maxdepth 1 -type d \
+                             -iregex "$1/[0-9]+_(${argStr}|${argStr}.*|.*_${argStr}|.*_${argStr}.*)"
+            else
+                find "$1" -mindepth 1 -maxdepth 1 -type f \
+                        \( -iregex "$1/[0-9]+_${argStr}" -o \
+                           -iregex "$1/[0-9]+_${argStr}.*" -o \
+                           -iregex "$1/[0-9]+_.*_${argStr}" -o \
+                           -iregex "$1/[0-9]+_.*_${argStr}.*" \
+                        \)
+            fi
+        fi
+    fi
+}
+
+# 
+# read user input arguments
+argId=1
+dirCategory=""
+dirJob=""
+exeTask=""
+listJobs=()
+listTasks=()
+exeArgs=()
+while [[ $argId -le $# ]]; do
+    argStr=$(echo "${!argId}" | tr '[:upper:]' '[:lower:]')
+    #echo "argStr = ${argStr}"
+    # 
+    #if [[ "${argStr}" == "-"* ]]; then
+    #    # process options <TODO>
+    #    echo "argStr = ${argStr}"
+    # 
+    if [[ -z "$dirCategory" ]]; then
+        listCategories=($(list_category_dirs "$Running_Pipeline_Code_Dir/Pipeline"))
+        dirCategory=($(find_category_dirs "$Running_Pipeline_Code_Dir/Pipeline" "${argStr}"))
+        if [[ -z "$dirCategory" ]] || [[ ${#dirCategory[@]} -gt 1 ]]; then
+            if [[ -z "$dirCategory" ]]; then
+                echo "Error! No pipeline category was found with the input name \"${argStr}\" under \"$Running_Pipeline_Code_Dir/Pipeline/\"!"
+            else
+                echo "Error! More than one pipeline categories were found with the input name \"${argStr}\" under \"$Running_Pipeline_Code_Dir/Pipeline/\"!"
+            fi
+            echo "List of pipeline categories (${#listCategories[@]}):"
+            for (( k=0; k<${#listCategories[@]}; k++ )); do 
+                echo "  ${listCategories[k]}"
+            done
+            exit
+        fi
+        echo "dirCategory=$dirCategory"
+        listJobs=($(list_job_dirs "$dirCategory"))
+    # 
+    elif [[ -z "$dirJob" ]]; then
+        dirJob=($(find_job_dirs "$dirCategory" "${argStr}"))
+        if [[ -z "$dirJob" ]] || [[ ${#dirJob[@]} -gt 1 ]]; then
+            if [[ -z "$dirJob" ]]; then
+                echo "Error! No pipeline job was found with the input name \"${argStr}\" under \"$dirCategory/\"!"
+            else
+                echo "Error! Ambiguous pipeline jobs were found by the input name \"${argStr}\" under \"$dirCategory/\"!"
+            fi
+            echo "List of pipeline jobs for category \"$(basename $dirCategory)\" (${#listJobs[@]}):"
+            for (( k=0; k<${#listJobs[@]}; k++ )); do 
+                echo "  ${listJobs[k]}"
+            done
+            exit
+        fi
+        echo "dirJob=$dirJob"
+        listTasks=($(list_task_files "$dirJob"))
+    # 
+    elif [[ -z "$exeTask" ]]; then
+        exeTask=($(find_task_files "$dirJob" "${argStr}"))
+        if [[ -z "$exeTask" ]] || [[ ${#exeTask[@]} -gt 1 ]]; then
+            if [[ -z "$exeTask" ]]; then
+                echo "Error! No pipeline task was found by the input name \"${argStr}\" under \"$dirJob/\"!"
+            else
+                echo "Error! Ambiguous pipeline tasks were found by the input name \"${argStr}\" under \"$dirJob/\"!"
+            fi
+            echo "List of pipeline tasks for job \"$(basename $dirJob)\" in category \"$(basename $dirCategory)\" (${#listTasks[@]}):"
+            for (( k=0; k<${#listTasks[@]}; k++ )); do 
+                echo "  ${listTasks[k]}"
+            done
+            exit
+        fi
+        echo "exeTask=$exeTask"
+    else
+        exeArgs+=("${!argId}")
+    fi
+    # 
+    argId=$((argId+1))
+done
+
+
+# 
+# check user input
+if [[ -z "$dirCategory" ]]; then
+    echo "Usage:"
+    echo "    $(basename ${BASH_SOURCE[0]}) \"Category\" \"Job\" \"Task\""
+    
+    listCategories=($(list_category_dirs "$Running_Pipeline_Code_Dir/Pipeline"))
+    
+    echo ""
+    echo "Notes:"
+    echo "    We have following ${#listCategories[@]} categories: "
+    for (( k=0; k<${#listCategories[@]}; k++ )); do 
+        echo "        ${listCategories[k]}"
+    done
+    echo "    Type $(basename ${BASH_SOURCE[0]}) ${listCategories[0]} to see the jobs under each category."
+    echo ""
+    echo "Example:"
+    echo "    $(basename ${BASH_SOURCE[0]}) CategoryName"
+    echo "    $(basename ${BASH_SOURCE[0]}) CategoryName JobName"
+    echo "    $(basename ${BASH_SOURCE[0]}) CategoryName JobName TaskName"
+    echo "    $(basename ${BASH_SOURCE[0]}) 1"
+    echo "    $(basename ${BASH_SOURCE[0]}) 1 1"
+    echo "    $(basename ${BASH_SOURCE[0]}) 1 1 1"
+    echo ""
+    exit
+elif [[ -z "$dirJob" ]]; then
+    echo "List of pipeline jobs for category \"$(basename $dirCategory)\" (${#listJobs[@]}):"
+    for (( k=0; k<${#listJobs[@]}; k++ )); do 
+        echo "  ${listJobs[k]}"
+    done
+    exit
+elif [[ -z "$exeTask" ]]; then
+    echo "List of pipeline tasks for job \"$(basename $dirJob)\" in category \"$(basename $dirCategory)\" (${#listTasks[@]}):"
+    for (( k=0; k<${#listTasks[@]}; k++ )); do 
+        echo "  ${listTasks[k]}"
+    done
+    exit
+#else
+#    #echo "Proceeding to running the pipeline!"
+fi
+
+
+# 
+# run pipeline
+logFile="$Running_Pipeline_Log_Dir/log_"$(basename "$dirCategory")_$(basename "$dirJob")_$(basename "$exeTask" | perl -p -e 's/(.*)(\.sh|\.bash|\.py|)/\1/g').txt
+if [[ ${#exeArgs[@]} -gt 0 ]]; then
+    echo "Running pipeline \"$exeTask\" (args: \"${exeArgs[@]}\") (logging to \"$logFile\")"
+else
+    echo "Running pipeline \"$exeTask\" (logging to \"$logFile\")"
+fi
+echo ""
+sleep 3.5
+if [[ ! -x "$exeTask" ]]; then
+    chmod +x "$exeTask"
+    if [[ ! -x "$exeTask" ]]; then
+        echo "Error! Could not grant executable permission to \"$exeTask\"!"
+        exit
+    fi
+fi
+$exeTask ${exeArgs[@]} 2>&1 | tee "$logFile"
+checkTask=$?
+if [[ $checkTask -eq 0 ]]; then
+    checkTask=$(tail -n 1 "$logFile" | grep "Error" | wc -l)
+fi
+if [[ $checkTask -eq 0 ]]; then
+    tail -n 1 "$logFile"
+    echo "Task finished successfully!"
+else
+    echo "Error occurred! Please check the printed message!"
+    exit
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

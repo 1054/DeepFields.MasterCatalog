@@ -1,0 +1,22 @@
+# ID          zHa         MAG_F625W  MAGERR_F625W  MAG_F814W  MAGERR_F814W  MAG_F160W  MAGERR_F160W
+Q1700-BNB36   2.2949      nan        nan           25.54      0.02          nan        nan     
+Q1700-BNB47   2.2935      nan        nan           25.83      0.03          nan        nan     
+Q1700-BNB93   2.3254      nan        nan           26.89      0.09          nan        nan     
+Q1700-BNB95   2.3064      nan        nan           25.69      0.03          nan        nan     
+Q1700-BNB104  2.2942      nan        nan           26.51      0.04          nan        nan     
+Q1700-BNB153  2.2903      nan        nan           26.63      0.12          nan        nan     
+SSA22a-001    3.0690      24.34      0.05          24.10      0.03          nan        nan     
+SSA22a-004    3.0788      nan        nan           25.10      0.03          nan        nan     
+SSA22a-006    3.0691      nan        nan           29.6       1.00          nan        nan     
+SSA22a-008    3.0692      25.10      0.14          24.75      0.04          24.44      0.05      
+SSA22a-009    3.0687      nan        nan           25.26      0.08          25.11      0.07      
+SSA22a-013    3.0919      nan        nan           25.67      0.06          nan        nan     
+SSA22a-014    3.0631      25.82      0.13          25.89      0.04          25.40      0.09      
+SSA22a-021    3.0670      nan        nan           27.02      0.11          nan        nan     
+SSA22a-046    3.0975      27.43      0.35          27.20      0.11          27.54      1.00
+SSA22a-062    3.0551      26.77      0.24          26.77      0.08          nan        nan     
+SSA22a-063    3.0978      nan        nan           27.09      0.12          26.14      0.19      
+SSA22a-066    3.0645      26.51      0.23          26.87      0.08          26.94      0.23      
+SSA22a-067    3.1013      nan        nan           29.6       1.00          nan        nan     
+
+# Note that MAGERR 1.0 means upper limit.

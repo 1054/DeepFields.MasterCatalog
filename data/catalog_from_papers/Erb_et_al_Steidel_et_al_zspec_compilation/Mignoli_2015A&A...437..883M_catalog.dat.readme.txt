@@ -1,0 +1,100 @@
+J/A+A/437/883       K20 survey: spectroscopic catalogue      (Mignoli+, 2005)
+================================================================================
+The K20 survey - VII. The spectroscopic catalogue:
+Spectral properties and evolution of the galaxy population.
+     Mignoli M., Cimatti A., Zamorani G., Pozzetti L., Daddi E., Renzini A.,
+     Broadhurst T., Cristiani S., D'Odorico S., Fontana A., Giallongo E.,
+     Gilmozzi R., Menci N., Saracco P.
+    <Astron. Astrophys. 437, 883 (2005)>
+    =2005A&A...437..883M
+================================================================================
+ADC_Keywords: Galaxies, spectra ; Galaxies, photometry ; Redshifts
+Keywords: galaxies: evolution - galaxies: distances and redshifts
+
+Abstract:
+    The K20 survey is a near infrared-selected, deep (Ks<20) redshift
+    survey targeting galaxies in two independent regions of the sky, the
+    Chandra Deep Field South and the field around the quasar 0055-2659,
+    for a total area of 52arcmin^2^. The total Ks-selected sample includes
+    545 objects. Low-resolution (R~300-600) optical spectra for 525 of
+    them have been obtained with the FORS1/FORS2 spectrographs at the
+    ESO/VLT, providing 501 spectroscopic identifications (including 12
+    type-1 AGN and 45 stars); consequently, we were able to measure
+    redshifts and identify stars in 96% of the observed objects, whereas
+    the spectroscopic completeness with respect to the total
+    photometrically selected sample is 92% (501/545). The K20 survey is
+    therefore the most complete spectroscopic survey of a near
+    infrared-selected sample to date. The K20 survey contains 444
+    spectroscopically identified galaxies, covering a redshift range of
+    0.05<z<2.73, with a mean redshift <z>=0.75; excluding the 32
+    "low-quality" redshifts does not significantly change these values.
+
+Description:
+    The spectroscopic observations were obtained at the ESO Very Large
+    Telescope (VLT) UT1 and UT2 equipped with FORS1 and FORS2,
+    respectively. The optical spectroscopy was collected during 20 nights
+    distributed over a period of four years (1999-2000, 20002).
+
+File Summary:
+--------------------------------------------------------------------------------
+ FileName   Lrecl  Records   Explanations
+--------------------------------------------------------------------------------
+ReadMe         80        .   This file
+catalog.dat    97      545   K20 redshift survey results:
+                              CDFS and QSO 0055-2659 fields
+sp/*            .      524   FITS spectra
+--------------------------------------------------------------------------------
+
+See also:
+   J/A+A/392/395 : Ks-band magnitudes of the K20 sample (Cimatti+, 2002)
+
+Byte-by-byte Description of file: catalog.dat
+--------------------------------------------------------------------------------
+   Bytes Format Units   Label     Explanations
+--------------------------------------------------------------------------------
+   1- 11  A11   ---     Seq       K20 identification number,
+                                   CDFS_NNNNN or q0055_NNNNN
+  13- 14  I2    h       RAh       Right ascension (J2000.0)
+  16- 17  I2    min     RAm       Right ascension (J2000.0)
+  19- 24  F6.3  s       RAs       Right ascension (J2000.0)
+      26  A1    ---     DE-       Declination sign (J2000.0)
+  27- 28  I2    deg     DEd       Declination (J2000.0)
+  30- 31  I2    arcmin  DEm       Declination (J2000.0)
+  33- 37  F5.2  arcsec  DEs       Declination (J2000.0)
+  39- 43  F5.2  mag     Ksmag     Total (SExtractor BEST) Ks-band magnitude
+  45- 48  F4.2  mag     R-K       R-K colour index, measured in a 2"-diameter
+                                   aperture corrected to total
+  50- 54  F5.3  ---     z         ? Spectroscopic redshift
+      55  A1    ---     ---       [I] (indef) when no redshift (q_z=-1)
+  56- 57  I2    ---   q_z         [-1/1]? Quality flag on redshfit (1)
+  59- 61  A3    ---     Class     Spectroscopic classes code (2)
+  63- 79  A17   ---     FileName  Spectra file name in "sp" subdirectory
+  81- 92  A12   ---     Com       Comment
+--------------------------------------------------------------------------------
+Note (1): Quality flag on redshfit as follows:
+      1 = solid redshift determination;
+      0 = tentative redshift determination;
+     -1 = no redshfit determination.
+Note (2): Spectroscopic classes as follows:
+      0 = objects classified as stars;
+      1 = red passive early-type galaxies;
+      2 = blue emission-line galaxies;
+    1.5 = intermediate galaxies with emission lines but red continuum indices;
+      3 = galaxies which are not included in one of the three previous classes;
+      4 = broad-line AGN.
+      We remind that objects with only a tentative redshift (q_z=0)
+      are not classified.
+--------------------------------------------------------------------------------
+
+History: 
+    Spectra copied from http://www.arcetri.astro.it/~k20
+
+References:
+   Cimatti et al.,   Paper I     2002A&A...381L..68C
+   Daddi et al.,     Paper II    2002A&A...384L...1D
+   Cimatti et al.,   Paper III   2002A&A...392..395C, Cat. <J/A+A/392/395>
+   Cimatti et al.,   Paper IV    2002A&A...391L...1C
+   Pozzetti et al.,  Paper V     2003A&A...402..837P
+   Fontana et al.,   Paper VI    2004A&A...424...23F
+================================================================================
+(End)                                      Patricia Vannier [CDS]    01-Jul-2005
