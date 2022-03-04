@@ -22,6 +22,7 @@ field_list = []
 count_list = []
 field_count_dict = {}
 field_count_zspec_dict = {}
+field_count_zspec_GE_3_dict = {}
 for key, tbgroup in zip(tbgroupped.groups.keys, tbgroupped.groups):
     field = key['Field'].strip()
     if field == '':
@@ -66,11 +67,20 @@ for key, tbgroup in zip(tbgroupped.groups.keys, tbgroupped.groups):
             field_count_zspec_dict[field] += count_zspec
         else:
             field_count_zspec_dict[field] = count_zspec
+    # 
+    mask_zspec_GE_3 = np.logical_and(tbgroup['zspec']>=3.0, tbgroup['Qzspec']>0.0)
+    count_zspec_GE_3 = np.count_nonzero(mask_zspec_GE_3)
+    if count_zspec_GE_3 > 0:
+        if field in field_count_zspec_GE_3_dict:
+            field_count_zspec_GE_3_dict[field] += count_zspec_GE_3
+        else:
+            field_count_zspec_GE_3_dict[field] = count_zspec_GE_3
 
 
 field_list = []
 count_list = []
 count_zspec_list = []
+count_zspec_GE_3_list = []
 for key in field_count_dict:
     field_list.append(key)
     count_list.append(field_count_dict[key])
@@ -78,9 +88,14 @@ for key in field_count_dict:
         count_zspec_list.append(field_count_zspec_dict[key])
     else:
         count_zspec_list.append(np.nan)
+    if key in field_count_zspec_GE_3_dict:
+        count_zspec_GE_3_list.append(field_count_zspec_GE_3_dict[key])
+    else:
+        count_zspec_GE_3_list.append(np.nan)
 
 ax.bar(np.arange(len(field_list)), count_list, width=0.9, align='center', color='C0', alpha=0.5, label='All z')
 ax.bar(np.arange(len(field_list)), count_zspec_list, width=0.8, align='center', color='C1', alpha=0.5, label='zspec')
+ax.bar(np.arange(len(field_list)), count_zspec_GE_3_list, width=0.8, align='center', color='C2', alpha=0.5, label='zspec≥3')
 
 ax.set_yscale('log')
 ax.set_ylabel('N', fontsize=12)

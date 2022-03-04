@@ -349,15 +349,19 @@ class HighzGalaxyCatalogIO(object):
                 if '_'+old_colname in tb.colnames:
                     old_colname = '_'+old_colname # it seems astroquery astropy.table will convert '.' in colname as '_'
             if old_colname in tb.colnames:
-                if verbose:
-                    print('renaming column %r to %r'%(old_colname, key))
-                if old_colname in key_list[ikey+1:]:
+                #print('checkin ' + old_colname + ' in ' + str(key_list[ikey+1:]))
+                #print('checkin ' + old_colname + ' in ' + str([column_key_values[k] for k in key_list[ikey+1:]]))
+                if old_colname in key_list[ikey+1:] or old_colname in [column_key_values[k] for k in key_list[ikey+1:]]:
+                    if verbose:
+                        print('acopying column %r as %r'%(old_colname, key))
                     if key in tb.colnames:
                         tb[key] = tb[old_colname]
                     else:
                         old_colindex = tb.colnames.index(old_colname)
                         tb.add_column(tb[old_colname], name=key, index=old_colindex) # if old_colname is used in later column_key_values items, then do not rename but copy the column
                 else:
+                    if verbose:
+                        print('renaming column %r to %r'%(old_colname, key))
                     tb.rename_column(old_colname, key)
         return tb
     
@@ -1076,10 +1080,214 @@ class HighzGalaxyCatalogIO(object):
                 # 
                 raise ValueError('ACCESS method %s for PHOTOMETRY is not accepted. It must be either TAP or FILE.'%(photometry_access))
         # 
+        # 
+        # 
+        # also query/read spectroscopy if the 'SPECTROSCOPY' section exists
+        if 'SPECTROSCOPY' in self.iniparser:
+            # 
+            # validated the meta info for spectroscopy section.
+            self.validateCatalogMetaInfo(required_sections_keys={'SPECTROSCOPY':
+                ['ID','RA','DEC',
+                 'LINE_NAME',
+                 'LINE_FLUX','LINE_VEL','LINE_SIG',
+                 'FLUX_UNIT','VEL_UNIT','SIG_UNIT','SIG_TYPE']})
+            # 
+            line_names = self.iniparser['SPECTROSCOPY']['LINE_NAME']
+            line_flux_columns = self.iniparser['SPECTROSCOPY']['LINE_FLUX']
+            line_vel_columns = self.iniparser['SPECTROSCOPY']['LINE_VEL']
+            line_sig_columns = self.iniparser['SPECTROSCOPY']['LINE_SIG']
+            line_names = eval(line_names)
+            line_flux_columns = eval(line_flux_columns)
+            line_vel_columns = eval(line_vel_columns)
+            line_sig_columns = eval(line_sig_columns)
+            flux_unit_str = self.iniparser['SPECTROSCOPY']['FLUX_UNIT'] # <TODO> FLUX_UNIT can be a list, a string or a expression
+            vel_unit_str = self.iniparser['SPECTROSCOPY']['VEL_UNIT'] # <TODO> VEL_UNIT can be a list, a string or a expression
+            sig_unit_str = self.iniparser['SPECTROSCOPY']['SIG_UNIT'] # <TODO> SIG_UNIT can be a list, a string or a expression
+            sig_type_str = self.iniparser['SPECTROSCOPY']['SIG_TYPE'] # <TODO> SIG_TYPE can be a list, a string or a expression
+            # 
+            column_key_values = OrderedDict()
+            column_key_values['ID'] = self.iniparser['SPECTROSCOPY']['ID']
+            column_key_values['RA'] = self.iniparser['SPECTROSCOPY']['RA']
+            column_key_values['DEC'] = self.iniparser['SPECTROSCOPY']['DEC']
+            column_unit_dict = OrderedDict()
+            # 
+            flux_unit_list = []
+            if flux_unit_str.find('[') >= 0:
+                flux_unit_list = eval(flux_unit_str)
+            elif flux_unit_str.find('u.') >= 0:
+                flux_unit_list = [eval(flux_unit_str)]*len(line_flux_columns)
+            elif flux_unit_str.strip() == '':
+                flux_unit_list = ['']*len(line_flux_columns)
+            else:
+                flux_unit_list = [u.Unit(flux_unit_str)]*len(line_flux_columns)
+            # 
+            vel_unit_list = []
+            if vel_unit_str.find('[') >= 0:
+                vel_unit_list = eval(vel_unit_str)
+            elif vel_unit_str.find('u.') >= 0:
+                vel_unit_list = [eval(vel_unit_str)]*len(line_flux_columns)
+            elif vel_unit_str.strip() == '':
+                vel_unit_list = ['']*len(line_flux_columns)
+            else:
+                vel_unit_list = [u.Unit(vel_unit_str)]*len(line_flux_columns)
+            # 
+            sig_unit_list = []
+            if sig_unit_str.find('[') >= 0:
+                sig_unit_list = eval(sig_unit_str)
+            elif sig_unit_str.find('u.') >= 0:
+                sig_unit_list = [eval(sig_unit_str)]*len(line_flux_columns)
+            elif sig_unit_str.strip() == '':
+                sig_unit_list = ['']*len(line_flux_columns)
+            else:
+                sig_unit_list = [u.Unit(sig_unit_str)]*len(line_flux_columns)
+            # 
+            sig_type_dict = OrderedDict()
+            sig_type_list = []
+            if sig_type_str.find('[') >= 0:
+                sig_type_list = eval(sig_type_str)
+            elif sig_type_str.strip() == '':
+                sig_type_list = ['']*len(line_flux_columns)
+            else:
+                sig_type_list = [str(sig_type_str).strip()]*len(line_flux_columns)
+            # 
+            # loop each band
+            # note that we do not check the array lengths of line_flux_columns, line_vel_columns, line_sig_columns and fluxunits
+            for this_line_name, this_flux_col, this_vel_col, this_sig_col, this_flux_unit, this_vel_unit, this_sig_unit, this_sig_type in \
+                    list(zip(line_names, line_flux_columns, line_vel_columns, line_sig_columns, flux_unit_list, vel_unit_list, sig_unit_list, sig_type_list)):
+                # 
+                this_flux_colname = this_flux_col
+                this_fluxerr_colname = this_flux_col
+                if 'FLUX_PREFIX' in self.iniparser['SPECTROSCOPY']:
+                    this_flux_prefix = self.evalConditionalDictionaryStr(self.iniparser['SPECTROSCOPY']['FLUX_PREFIX'], key=this_flux_col)
+                    this_flux_colname = this_flux_prefix + this_flux_colname
+                if 'FLUX_SUFFIX' in self.iniparser['SPECTROSCOPY']:
+                    this_flux_suffix = self.evalConditionalDictionaryStr(self.iniparser['SPECTROSCOPY']['FLUX_SUFFIX'], key=this_flux_col)
+                    this_flux_colname = this_flux_colname + this_flux_suffix
+                if 'FLUXERR_PREFIX' in self.iniparser['SPECTROSCOPY']:
+                    this_fluxerr_prefix = self.evalConditionalDictionaryStr(self.iniparser['SPECTROSCOPY']['FLUXERR_PREFIX'], key=this_flux_col)
+                    this_fluxerr_colname = this_fluxerr_prefix + this_fluxerr_colname
+                if 'FLUXERR_SUFFIX' in self.iniparser['SPECTROSCOPY']:
+                    this_fluxerr_suffix = self.evalConditionalDictionaryStr(self.iniparser['SPECTROSCOPY']['FLUXERR_SUFFIX'], key=this_flux_col)
+                    this_fluxerr_colname = this_fluxerr_colname + this_fluxerr_suffix
+                column_key_values['LINE FLUX '+this_line_name] = this_flux_colname
+                column_unit_dict['LINE FLUX '+this_line_name] = this_flux_unit
+                if this_fluxerr_colname != this_flux_colname:
+                    column_key_values['LINE FLUXERR '+this_line_name] = this_fluxerr_colname
+                    column_unit_dict['LINE FLUXERR '+this_line_name] = this_flux_unit
+                # 
+                if this_vel_col != '':
+                    this_vel_colname = this_vel_col
+                    this_velerr_colname = this_vel_col
+                    if 'VEL_PREFIX' in self.iniparser['SPECTROSCOPY']:
+                        this_vel_prefix = self.evalConditionalDictionaryStr(self.iniparser['SPECTROSCOPY']['VEL_PREFIX'], key=this_vel_col)
+                        this_vel_colname = this_vel_prefix + this_vel_colname
+                    if 'VEL_SUFFIX' in self.iniparser['SPECTROSCOPY']:
+                        this_vel_suffix = self.evalConditionalDictionaryStr(self.iniparser['SPECTROSCOPY']['VEL_SUFFIX'], key=this_vel_col)
+                        this_vel_colname = this_vel_colname + this_vel_suffix
+                    if 'VELERR_PREFIX' in self.iniparser['SPECTROSCOPY']:
+                        this_velerr_prefix = self.evalConditionalDictionaryStr(self.iniparser['SPECTROSCOPY']['VELERR_PREFIX'], key=this_vel_col)
+                        this_velerr_colname = this_velerr_prefix + this_velerr_colname
+                    if 'VELERR_SUFFIX' in self.iniparser['SPECTROSCOPY']:
+                        this_velerr_suffix = self.evalConditionalDictionaryStr(self.iniparser['SPECTROSCOPY']['VELERR_SUFFIX'], key=this_vel_col)
+                        this_velerr_colname = this_velerr_colname + this_velerr_suffix
+                    column_key_values['LINE VEL '+this_line_name] = this_vel_colname
+                    column_unit_dict['LINE VEL '+this_line_name] = this_vel_unit
+                    if this_velerr_colname != this_vel_colname:
+                        column_key_values['LINE VELERR '+this_line_name] = this_velerr_colname
+                        column_unit_dict['LINE VELERR '+this_line_name] = this_vel_unit
+                # 
+                if this_sig_col != '':
+                    this_sig_colname = this_sig_col
+                    this_sigerr_colname = this_sig_col
+                    if 'SIG_PREFIX' in self.iniparser['SPECTROSCOPY']:
+                        this_sig_prefix = self.evalConditionalDictionaryStr(self.iniparser['SPECTROSCOPY']['SIG_PREFIX'], key=this_sig_col)
+                        this_sig_colname = this_sig_prefix + this_sig_colname
+                    if 'SIG_SUFFIX' in self.iniparser['SPECTROSCOPY']:
+                        this_sig_suffix = self.evalConditionalDictionaryStr(self.iniparser['SPECTROSCOPY']['SIG_SUFFIX'], key=this_sig_col)
+                        this_sig_colname = this_sig_colname + this_sig_suffix
+                    if 'SIGERR_PREFIX' in self.iniparser['SPECTROSCOPY']:
+                        this_sigerr_prefix = self.evalConditionalDictionaryStr(self.iniparser['SPECTROSCOPY']['SIGERR_PREFIX'], key=this_sig_col)
+                        this_sigerr_colname = this_sigerr_prefix + this_sigerr_colname
+                    if 'SIGERR_SUFFIX' in self.iniparser['SPECTROSCOPY']:
+                        this_sigerr_suffix = self.evalConditionalDictionaryStr(self.iniparser['SPECTROSCOPY']['SIGERR_SUFFIX'], key=this_sig_col)
+                        this_sigerr_colname = this_sigerr_colname + this_sigerr_suffix
+                    column_key_values['LINE SIG '+this_line_name] = this_sig_colname
+                    column_unit_dict['LINE SIG '+this_line_name] = this_sig_unit
+                    sig_type_dict['LINE SIG '+this_line_name] = this_sig_type # needed for line sigma FWHM to sigma conversion
+                    if this_sigerr_colname != this_sig_colname:
+                        column_key_values['LINE SIGERR '+this_line_name] = this_sigerr_colname
+                        column_unit_dict['LINE SIGERR '+this_line_name] = this_sig_unit
+                        sig_type_dict['LINE SIGERR '+this_line_name] = this_sig_type # needed for line sigma FWHM to sigma conversion
+            # 
+            if verbose:
+                print('column_key_values: ', column_key_values)
+                print('column_unit_dict: ', column_unit_dict)
+                print('sig_type_dict: ', sig_type_dict)
+            # 
+            spectroscopy_access = self.access
+            if 'ACCESS' in self.iniparser['SPECTROSCOPY']:
+                spectroscopy_access = self.iniparser['SPECTROSCOPY']['ACCESS']
+            if verbose:
+                print('spectroscopy_access: %s'%(spectroscopy_access))
+            # 
+            if spectroscopy_access == 'TAP':
+                # 
+                # get specifc table name for spectroscopy if needed
+                if 'TABLE' in self.iniparser['SPECTROSCOPY']:
+                    table_name = self.iniparser['SPECTROSCOPY']['TABLE']
+                if 'TAP' in self.iniparser['SPECTROSCOPY']:
+                    server_url = self.iniparser['SPECTROSCOPY']['TAP']
+                query_command = ''
+                if 'QUERY_COMMAND' in self.iniparser['SPECTROSCOPY']:
+                    query_command = self.iniparser['SPECTROSCOPY']['QUERY_COMMAND']
+                # 
+                # run queryTAP
+                self.table = self.queryTAP(server_url, table_name, column_key_values, query_command=query_command, column_unit_dict=column_unit_dict, 
+                                           cache_dir=catalog_cache_dir, cache_name='spectroscopy', 
+                                           verbose=verbose, overwrite=overwrite)
+                # 
+            elif spectroscopy_access == 'FILE':
+                # 
+                # get specifc table file for spectroscopy if needed
+                if 'FILE' in self.iniparser['SPECTROSCOPY']:
+                    table_file = self.parseFilePath(self.iniparser['SPECTROSCOPY']['FILE'])
+                if 'FORMAT' in self.iniparser['SPECTROSCOPY']:
+                    table_format = self.iniparser['SPECTROSCOPY']['FORMAT']
+                elif 'FORMAT' in self.iniparser['TABLE']:
+                    table_format = self.iniparser['SPECTROSCOPY']['FORMAT']
+                else:
+                    table_format = ''
+                if table_format == '' and table_file.endswith('.txt'):
+                    table_format = 'ascii.commented_header'
+                # 
+                # check table_file if it is a file name under the cache dir
+                if (not os.path.isfile(table_file)) and os.path.isfile(os.path.join(catalog_cache_dir, table_file)):
+                    table_file = os.path.join(catalog_cache_dir, table_file)
+                # 
+                # read file
+                self.table = self.readTableFile(table_file, table_format, column_key_values, column_unit_dict=column_unit_dict, 
+                                                cache_dir=catalog_cache_dir, cache_name='spectroscopy', 
+                                                verbose=verbose, overwrite=overwrite)
+                # 
+            else:
+                # 
+                raise ValueError('ACCESS method %s for SPECTROSCOPY is not accepted. It must be either TAP or FILE.'%(spectroscopy_access))
+            # 
+            # post-process line sigma FWHM to sigma conversion
+            if len(sig_type_dict) > 0:
+                for key in sig_type_dict:
+                    this_sig_type = sig_type_dict[key]
+                    if this_sig_type.upper().find('FWHM') >= 0:
+                        if verbose:
+                            print('converting FHWM to sigma by dividing 2.35482: ', key)
+                        self.table[key] /= 2.35482
+        # 
+        # 
+        # 
         # return
         return
     
-    def getColumn(self, column_name, alternative_column_names=None, verbose=True):
+    def getColumn(self, column_name, alternative_column_names=None, verbose=True, warning=False):
         if self.table is not None:
             matched_colname = ''
             for colname in self.colnames:
@@ -1121,7 +1329,7 @@ class HighzGalaxyCatalogIO(object):
                     print('Reading column %s'%(matched_colname))
                 return self.table[matched_colname]
             else:
-                if verbose:
+                if verbose and warning:
                     print('Warning! Column %r was not found in the table %r (%s)!'%(column_name, self.catalog_meta_file, re.sub(r'[ \t\r\n]+', r' ', str(self.colnames))))
         return None
     

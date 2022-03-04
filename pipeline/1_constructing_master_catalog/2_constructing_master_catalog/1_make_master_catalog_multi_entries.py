@@ -211,7 +211,7 @@ with open(Output_Json, 'w') as fp:
 Total_Obj = 0
 Count_Obj = 0
 Count_Dump = 0
-Debug_level = 1
+Debug_level = 0
 
 
 
