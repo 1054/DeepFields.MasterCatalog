@@ -244,8 +244,8 @@ mask_valid_z = np.logical_and(~np.isnan(Cat_z_2D), Cat_z_2D>0.0)
 mask_valid_zphot = np.logical_and(~np.isnan(Cat_zphot_2D), Cat_zphot_2D>0.0)
 mask_valid_zspec = np.logical_and(~np.isnan(Cat_zspec_2D), Cat_zspec_2D>0.0)
 mask_valid_logMstar = np.logical_and(~np.isnan(Cat_logMstar_2D), Cat_logMstar_2D>0.0)
-mask_valid_logSFR = np.logical_and(~np.isnan(Cat_logSFR_2D), Cat_logSFR_2D>0.0)
-mask_valid_logSSFR = np.logical_and(~np.isnan(Cat_logSSFR_2D), Cat_logSSFR_2D>0.0)
+mask_valid_logSFR = np.logical_and(~np.isnan(Cat_logSFR_2D), Cat_logSFR_2D>-99.0)
+mask_valid_logSSFR = np.logical_and(~np.isnan(Cat_logSSFR_2D), Cat_logSSFR_2D>-99.0)
 print('Processing each row')
 for i in tqdm(range(len(MasterCat))):
     for x in range(Cat_N):
