@@ -1365,3 +1365,11 @@ class HighzGalaxyCatalogIO(object):
 
 
 
+
+if __name__ == '__main__':
+    
+    if len(sys.argv) > 1:
+        catalog_meta_info = sys.argv[1]
+        if os.path.isfile(catalog_meta_info):
+            Cat = HighzGalaxyCatalogIO(catalog_meta_info)
+
