@@ -1,0 +1,9 @@
+https://amused.univ-lyon1.fr/project/UDF/HUDF/
+
+  Tar archive of 6 tables in standard FITS format (8.8 Mb)
+    https://amused.univ-lyon1.fr/data/UDF/HUDF/download/UDF_HUDF_Catalogs_FULL.tar.gz
+
+MUSE HUDF DR2
+Bacon et al, 2022, A&A, (astroph-2211.08493)
+
+
